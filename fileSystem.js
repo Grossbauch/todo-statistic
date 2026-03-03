@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 // TODO PE; 2018-08-20; переименовать?
 function getAllFilePathsWithExtension(directoryPath, extension, filePaths) {
@@ -6,9 +7,9 @@ function getAllFilePathsWithExtension(directoryPath, extension, filePaths) {
     // TODO Anonymous Developer; 2016-03-17; Необходимо переписать этот код и использовать асинхронные версии функций для чтения из файла
     const fileNames = fs.readdirSync(directoryPath);
     for (const fileName of fileNames) {
-        const filePath = directoryPath + '/' + fileName;
+        const filePath = path.join(directoryPath, fileName);
         if (fs.statSync(filePath).isDirectory()) {
-            getAllFilePathsWithExtension(filePath, filePaths);
+            getAllFilePathsWithExtension(filePath, extension, filePaths);
         } else if (filePath.endsWith(`.${extension}`)) {
             filePaths.push(filePath);
         }
