@@ -42,17 +42,31 @@ function processCommand(command) {
             });
             userTodos.forEach(todo => console.log(todo));
             break;
+        case 'date':
+            const ourDate = args[1];
+            if (!ourDate) {
+                console.log('Дата не указана');
+                break;
+            }
+            getAllAfterDate(ourDate);
+            break;
         default:
             console.log('wrong command');
             break;
     }
 }
 
-function show() {
-    const paths = getAllFilePathsWithExtension();
-    console.log(paths);
+function getAllAfterDate(ourDate) {
+    const dateTodos = getAllTodos().filter(todo => {
+        const parts = todo.replace('// TODO ', '').split(';');
+        if (parts.length >= 3) {
+            const todoDate = parts[1].trim();
+            return todoDate >= ourDate;
+        }
+        return false;
+    });
+    dateTodos.forEach(t => console.log(t.trim()));
 }
-
 function getAllTodos() {
     const todos = [];
     files.forEach(fileContent => {
