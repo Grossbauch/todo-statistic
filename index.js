@@ -71,6 +71,8 @@ function parseTodo(todoLine) {
         importance: importance,
         description: description
     };
+}
+
 function processCommand(command) {
     const args = command.split(' ');
     const mainCommand = args[0];
@@ -80,12 +82,14 @@ function processCommand(command) {
             process.exit(0);
             break;
         case 'show':
-            const allTodos = getAllTodos();
-            allTodos.forEach(todo => console.log(todo));
+            const allTodos1 = getAllTodos();
+            allTodos1.forEach(todo => console.log(todo.raw));
             break;
         case 'important':
-            const importantTodos = getAllTodos().filter(todo => todo.includes('!'));
-            importantTodos.forEach(todo => console.log(todo));
+            const allTodos2 = getAllTodos();
+            allTodos2
+                .filter(todo => todo.importance > 0)
+                .forEach(todo => console.log(todo.raw));
             break;
         case 'user':
             const userName = args[1]?.toLowerCase();
@@ -93,22 +97,29 @@ function processCommand(command) {
                 console.log('Имени нету');
                 break;
             }
-            const userTodos = getAllTodos().filter(todo => {
-                const parts = todo.replace('// TODO ', '').split(';');
-                if (parts.length >= 3) {
-                    return parts[0].trim().toLowerCase() === userName;
-                }
-                return false;
-            });
-            userTodos.forEach(todo => console.log(todo));
+            const allTodos11 = getAllTodos();
+            allTodos11
+                .filter(todo => todo.user?.toLowerCase() === userName)
+                .forEach(todo => console.log(todo.raw));
+            break;
+        case 'sort':
+            const sortArg = args[1];
+            if (!sortArg || !['importance', 'user', 'date'].includes(sortArg)) {
+                console.log("Неверный аргумент для 'sort'. Используйте: sort {importance | user | date}");
+                break;
+            }
+            const allTodos22 = getAllTodos();
+            const sortedList = sortTodos(allTodos22, sortArg);
+            sortedList.forEach(todoLine => console.log(todoLine));
             break;
         case 'date':
+            const allTodos3 = getAllTodos();
             const ourDate = args[1];
             if (!ourDate) {
                 console.log('Дата не указана');
                 break;
             }
-            getAllAfterDate(ourDate);
+            getAllAfterDate(allTodos3, ourDate);
             break;
         default:
             console.log('wrong command');
@@ -116,17 +127,18 @@ function processCommand(command) {
     }
 }
 
-function getAllAfterDate(ourDate) {
-    const dateTodos = getAllTodos().filter(todo => {
-        const parts = todo.replace('// TODO ', '').split(';');
+function getAllAfterDate(todos, ourDate) {
+    const filtered = todos.filter(todo => {
+        const parts = todo.raw.replace('// TODO ', '').split(';');
         if (parts.length >= 3) {
-            const todoDate = parts[1].trim();
-            return todoDate >= ourDate;
+            const todoDateStr = parts[1].trim();
+            return todoDateStr >= ourDate;
         }
         return false;
     });
-    dateTodos.forEach(t => console.log(t.trim()));
+    filtered.forEach(t => console.log(t.raw));
 }
+
 function getAllTodos() {
     const todos = [];
     files.forEach(fileContent => {
@@ -183,56 +195,4 @@ function sortTodos(todos, type) {
     }
 
     return sorted.map(todo => todo.raw);
-}
-
-function processCommand(command) {
-    const parts = command.trim().split(/\s+/);
-    const mainCommand = parts[0];
-    const arg = parts[1];
-
-    try {
-        switch (mainCommand) {
-            case 'exit':
-                process.exit(0);
-                break;
-
-            case 'show':
-                getAllTodos().forEach(todo => console.log(todo.raw));
-                break;
-
-            case 'important':
-                const importantTodos = getAllTodos().filter(todo => todo.importance > 0);
-                importantTodos.forEach(todo => console.log(todo.raw));
-                break;
-
-            case 'user':
-                const userName = arg?.toLowerCase();
-                if (!userName) {
-                    console.log('Имени нету. Используйте: user <имя>');
-                    break;
-                }
-                const userTodos = getAllTodos().filter(todo =>
-                    todo.user && todo.user.toLowerCase() === userName
-                );
-                userTodos.forEach(todo => console.log(todo.raw));
-                break;
-
-            case 'sort':
-                if (!arg || !['importance', 'user', 'date'].includes(arg)) {
-                    console.log("Неверный аргумент для 'sort'. Используйте: sort {importance | user | date}");
-                    break;
-                }
-
-                const allTodos = getAllTodos();
-                const sortedList = sortTodos(allTodos, arg);
-                sortedList.forEach(todoLine => console.log(todoLine));
-                break;
-
-            default:
-                console.log('wrong command');
-                break;
-        }
-    } catch (e) {
-        console.error("Произошла ошибка при выполнении команды:", e.message);
-    }
 }
