@@ -134,6 +134,7 @@ function getAllAfterDate(todos, ourDate) {
         }
         return false;
     });
+    
     filtered.forEach(t => console.log(t.raw));
 }
 
@@ -167,6 +168,7 @@ function sortTodos(todos, type) {
                 const userB = (b.user || '{anonymous}').toLowerCase();
                 return userA.localeCompare(userB);
             });
+            
             break;
         case 'date':
             sorted.sort((a, b) => {
