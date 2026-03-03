@@ -1,5 +1,7 @@
 const { getAllFilePathsWithExtension, readFile } = require('./fileSystem');
 const { readLine } = require('./console');
+const { printTable } = require('./formatter');
+
 const files = getFiles();
 
 console.log('Please, write your command!');
@@ -75,21 +77,18 @@ function parseTodo(todoLine) {
 
 function processCommand(command) {
     const args = command.split(' ');
-    const mainCommand = args[0];
+    const mainCommand = args[0]
+    const allTodos = getAllTodos();
 
     switch (mainCommand) {
         case 'exit':
             process.exit(0);
             break;
         case 'show':
-            const allTodos1 = getAllTodos();
-            allTodos1.forEach(todo => console.log(todo.raw));
+            printTable(allTodos);
             break;
         case 'important':
-            const allTodos2 = getAllTodos();
-            allTodos2
-                .filter(todo => todo.importance > 0)
-                .forEach(todo => console.log(todo.raw));
+            printTable(allTodos.filter(todo => todo.importance > 0));
             break;
         case 'user':
             const userName = args[1]?.toLowerCase();
@@ -97,29 +96,28 @@ function processCommand(command) {
                 console.log('Имени нету');
                 break;
             }
-            const allTodos11 = getAllTodos();
-            allTodos11
-                .filter(todo => todo.user?.toLowerCase() === userName)
-                .forEach(todo => console.log(todo.raw));
+            printTable(allTodos.filter(todo => todo.user?.toLowerCase() === userName));
             break;
         case 'sort':
             const sortArg = args[1];
             if (!sortArg || !['importance', 'user', 'date'].includes(sortArg)) {
-                console.log("Неверный аргумент для 'sort'. Используйте: sort {importance | user | date}");
+                console.log("Неверный аргумент для 'sort'.");
                 break;
             }
-            const allTodos22 = getAllTodos();
-            const sortedList = sortTodos(allTodos22, sortArg);
-            sortedList.forEach(todoLine => console.log(todoLine));
+            const sortedObjects = sortTodos(allTodos, sortArg);
+            printTable(sortedObjects);
             break;
         case 'date':
-            const allTodos3 = getAllTodos();
             const ourDate = args[1];
             if (!ourDate) {
                 console.log('Дата не указана');
                 break;
             }
-            getAllAfterDate(allTodos3, ourDate);
+            const filteredByDate = allTodos.filter(todo => {
+                const todoDateStr = todo.date ? todo.date.toISOString().split('T')[0] : '';
+                return todoDateStr >= ourDate;
+            });
+            printTable(filteredByDate);
             break;
         default:
             console.log('wrong command');
@@ -157,42 +155,26 @@ function getAllTodos() {
 }
 
 function sortTodos(todos, type) {
-    let sorted;
+    let sorted = [...todos];
 
     switch (type) {
         case 'importance':
-            sorted = [...todos].sort((a, b) => b.importance - a.importance);
+            sorted.sort((a, b) => b.importance - a.importance);
             break;
-
         case 'user':
-            sorted = [...todos].sort((a, b) => {
-                const userA = a.user;
-                const userB = b.user;
-
-                if (userA === null && userB === null) return 0;
-                if (userA === null) return 1;
-                if (userB === null) return -1;
-
+            sorted.sort((a, b) => {
+                const userA = (a.user || '{anonymous}').toLowerCase();
+                const userB = (b.user || '{anonymous}').toLowerCase();
                 return userA.localeCompare(userB);
             });
             break;
-
         case 'date':
-            sorted = [...todos].sort((a, b) => {
-                const dateA = a.date;
-                const dateB = b.date;
-
-                if (!dateA && !dateB) return 0;
-                if (!dateA) return 1;
-                if (!dateB) return -1;
-
-                return dateB.getTime() - dateA.getTime();
+            sorted.sort((a, b) => {
+                if (!a.date) return 1;
+                if (!b.date) return -1;
+                return b.date - a.date;
             });
             break;
-
-        default:
-            return todos;
     }
-
-    return sorted.map(todo => todo.raw);
+    return sorted;
 }
